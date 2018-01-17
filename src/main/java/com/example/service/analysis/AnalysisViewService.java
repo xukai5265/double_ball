@@ -1,4 +1,4 @@
-package com.example.service.crawler;
+package com.example.service.analysis;
 
 import com.example.domain.BlueBean;
 import com.example.domain.DoubleBall;
@@ -31,8 +31,8 @@ public class AnalysisViewService {
      * 获取双色球所有数据
      * @return
      */
-    public List<DoubleBall> getBlueInfo(){
-         return doubleBallRepository.findAll();
+    public List<DoubleBall> getBlueInfo(String year){
+         return doubleBallRepository.findByCodeLike(year);
     }
     public List<BlueBean> getBlueCount(){
         List<BlueBean> blueBeans = new ArrayList<>();

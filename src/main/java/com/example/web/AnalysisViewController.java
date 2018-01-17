@@ -2,7 +2,9 @@ package com.example.web;
 
 import com.example.domain.BlueBean;
 import com.example.domain.DoubleBall;
-import com.example.service.crawler.AnalysisViewService;
+import com.example.domain.RedBlueCount;
+import com.example.service.analysis.AnalysisViewService;
+import com.example.service.analysis.RedBlueCountService;
 import com.example.utils.domain.BlueInfo;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -14,10 +16,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.Array;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -29,6 +29,27 @@ import java.util.*;
 public class AnalysisViewController {
     @Autowired
     private AnalysisViewService analysisViewService;
+    @Autowired
+    private RedBlueCountService redBlueCountService;
+
+
+    /**
+     * 获取蓝球中 - 红球的统计情况
+     * @param request
+     * @param blue
+     * @return
+     */
+    @RequestMapping(value = "/red/count/{blue}/{createTime}")
+    @ResponseBody
+    public String viewRedBlueCountByBlue(HttpServletRequest request,@PathVariable String blue,@PathVariable String createTime){
+        String callback = request.getParameter("callback");
+        String startTime = createTime +" 00:00:00";
+        String endTime = createTime + " 23:59:59";
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        List<RedBlueCount> redBlueCounts = redBlueCountService.getRedBlueCountByBlue(blue,startTime,endTime);
+        String json = gson.toJson(redBlueCounts);
+        return callback + "(" + json + ")";
+    }
 
     /**
      * 蓝球走势图
@@ -87,12 +108,12 @@ public class AnalysisViewController {
      * 蓝球汇总信息
      * @return
      */
-    @RequestMapping(value = "/blue/info")
+    @RequestMapping(value = "/blue/info/{year}")
     @ResponseBody
-    public String viewBlueInfo(HttpServletRequest request){
+    public String viewBlueInfo(HttpServletRequest request,@PathVariable String year){
         String callback = request.getParameter("callback");
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        List<DoubleBall> doubleBalls = analysisViewService.getBlueInfo();
+        List<DoubleBall> doubleBalls = analysisViewService.getBlueInfo(year);
         List<BlueInfo> blueInfos = new ArrayList<>();
         for(DoubleBall doubleBall : doubleBalls){
             List<Object> value = new ArrayList<>();

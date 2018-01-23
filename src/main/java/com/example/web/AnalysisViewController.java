@@ -47,7 +47,16 @@ public class AnalysisViewController {
         String endTime = createTime + " 23:59:59";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         List<RedBlueCount> redBlueCounts = redBlueCountService.getRedBlueCountByBlue(blue,startTime,endTime);
-        String json = gson.toJson(redBlueCounts);
+        List<String> reds = new ArrayList<>();
+        List<Integer> counts = new ArrayList<>();
+        Map<String,List> map = new HashMap<>();
+        for(RedBlueCount redBlueCount : redBlueCounts){
+            reds.add(redBlueCount.getRed());
+            counts.add(redBlueCount.getCount());
+        }
+        map.put("categories",reds);
+        map.put("data",counts);
+        String json = gson.toJson(map);
         return callback + "(" + json + ")";
     }
 

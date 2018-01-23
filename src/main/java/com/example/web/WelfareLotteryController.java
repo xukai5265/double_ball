@@ -1,16 +1,23 @@
 package com.example.web;
 
+import com.example.domain.DoubleBall;
+import com.example.service.analysis.AnalysisViewService;
 import com.example.service.crawler.WelfareLotteryService;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +34,9 @@ public class WelfareLotteryController {
 
     @Autowired
     private WelfareLotteryService welfareLotteryService;
+
+    @Autowired
+    private AnalysisViewService analysisViewService;
 
     /**
      * 爬去双色球历史数据
@@ -56,7 +66,49 @@ public class WelfareLotteryController {
      * @return
      */
     @RequestMapping(value = "gen")
-    public Map<String,List<Integer>> genDoubleBall(){
-        return welfareLotteryService.randomDoubleBall();
+    public String genDoubleBall(HttpServletRequest request){
+        String callback = request.getParameter("callback");
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        Map<String,Object> res = welfareLotteryService.randomDoubleBall();
+        String json = gson.toJson(res);
+        return callback + "(" + json + ")";
+    }
+
+    @RequestMapping(value = "test/{code}")
+    public String test(@PathVariable String code){
+        long index = 0;
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        boolean flag = true;
+        List<DoubleBall> doubleBalls = analysisViewService.getBlueTrend(code);
+        DoubleBall doubleBall = doubleBalls.get(0);
+        while(flag){
+            Map<String,Object> res = welfareLotteryService.randomDoubleBall();
+            String reds = "";
+            List<Integer> redArr = (List<Integer>)res.get("red");
+            for(int i:redArr){
+                if(i<10){
+                    reds+="0"+i+",";
+                }else {
+                    reds+=i+",";
+                }
+            }
+            if(reds.endsWith(",")){
+                reds=reds.substring(0,reds.length()-1);
+            }
+            String blue = (Integer)res.get("blue")<10? "0"+res.get("blue"):res.get("blue")+"";
+            if(reds.equals(doubleBall.getRed())&& blue.equals(doubleBall.getBlue())){
+                flag = false;
+                Map<String,Object> map = new HashMap<>();
+                map.put("index",index);
+                map.put("随机：",reds+"--"+blue);
+                map.put("中奖号码：：",doubleBall.getRed()+"--"+doubleBall.getBlue());
+                String json = gson.toJson(map);
+                log.info(json);
+                return json;
+            }
+            index++;
+        }
+        return "";
+
     }
 }

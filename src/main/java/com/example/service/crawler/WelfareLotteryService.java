@@ -9,11 +9,14 @@ import com.example.repository.DoubleBallRepository;
 import com.example.utils.HttpRequest;
 import com.example.utils.JsoupHelper;
 import com.example.utils.WebCrawler;
+import com.example.web.WelfareLotteryController;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +33,7 @@ import java.util.regex.Pattern;
  */
 @Service
 public class WelfareLotteryService {
-
+    public static final Logger log = LoggerFactory.getLogger(WelfareLotteryService.class);
     @Autowired
     private DoubleBallJpaRepository doubleBallJpaRepository;
     @Autowired
@@ -65,17 +68,17 @@ public class WelfareLotteryService {
         String date = heads[1].split("：")[1];
         String week = getWeek(date);
         String content = doc.select("#1 > div.c-border.c-gap-bottom-small > div:nth-child(3)").text();
-        System.out.println(content);
-        System.out.println("星期："+week);
-        System.out.println("开奖日期："+date);
-        System.out.println("code:"+ code);
-        System.out.println(red1);
-        System.out.println(red2);
-        System.out.println(red3);
-        System.out.println(red4);
-        System.out.println(red5);
-        System.out.println(red6);
-        System.out.println(bule);
+        log.info(content);
+        log.info("星期："+week);
+        log.info("开奖日期："+date);
+        log.info("code:"+ code);
+        log.info(red1);
+        log.info(red2);
+        log.info(red3);
+        log.info(red4);
+        log.info(red5);
+        log.info(red6);
+        log.info(bule);
         String red = red1+","+red2+","+red3+","+red4+","+red5+","+red6;
         DoubleBall doubleBall = new DoubleBall();
         doubleBall.setName("双色球");
@@ -87,10 +90,10 @@ public class WelfareLotteryService {
         doubleBall.setContent(content);
 
         if(doubleBallRepository.findByCode(code).size()!=0){
-            System.out.println("数据库中已经存在"+code+"期数据！");
+            log.info("数据库中已经存在"+code+"期数据！");
         }else {
             doubleBallJpaRepository.save(doubleBall);
-            System.out.println(code+"期数据保存成功！");
+            log.info(code+"期数据保存成功！");
         }
     }
 
@@ -104,9 +107,9 @@ public class WelfareLotteryService {
     public void doubleBallCrawler(String url) throws Exception {
         for(int i=1;i<20;i++){
             String myUrl = url;
-            System.out.println("第"+i+"页");
+            log.info("第"+i+"页");
             myUrl+=i;
-            System.out.println(myUrl);
+            log.info(myUrl);
             String cookies = "Sites=_21; UniqueID=u8iZxBi585J3agOZ1515637240923; Hm_lvt_bddcb154f385b71c72d95dae58113e9c=1513913346; 21_vq=27";
             String userAgent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36";
             Map<String,String> header = new HashMap<>();
@@ -117,8 +120,8 @@ public class WelfareLotteryService {
             header.put("Referer","http://www.cwl.gov.cn/kjxx/ssq/kjgg/");
             header.put("host","www.cwl.gov.cn");
             String content = HttpRequest.sendGet(myUrl,header);
-            System.out.println(content);
-            System.out.println("开始解析 第"+i+"页数据...");
+            log.info(content);
+            log.info("开始解析 第"+i+"页数据...");
             JSONObject jsonObject = JSON.parseObject(content);
             JSONArray datas = jsonObject.getJSONArray("result");
             String[] dataArr = JsoupHelper.getJsonToStringArray(datas);
@@ -162,7 +165,7 @@ public class WelfareLotteryService {
                 doubleBallJpaRepository.save(doubleBall);
             }
             Thread.sleep(10000);
-            System.out.println("第"+i+"页数据解析成功...");
+            log.info("第"+i+"页数据解析成功...");
         }
 
     }
@@ -171,7 +174,7 @@ public class WelfareLotteryService {
      * 随机一注，排除往期中奖
      * @return
      */
-    public Map<String,List<Integer>> randomDoubleBall(){
+    public Map<String,Object> randomDoubleBall(){
         // 初始化 红蓝 球
         List<Integer> reds = new ArrayList<>();
         for(int i=1;i<=33;i++){
@@ -186,30 +189,30 @@ public class WelfareLotteryService {
         int red4 = reds.remove((int)(Math.random()*30));
         int red5 = reds.remove((int)(Math.random()*29));
         int red6 = reds.remove((int)(Math.random()*28));
-        System.out.println("红1："+red1);
-        System.out.println("红2："+red2);
-        System.out.println("红3："+red3);
-        System.out.println("红4："+red4);
-        System.out.println("红5："+red5);
-        System.out.println("红6："+red6);
-        System.out.println("蓝："+blue);
+        log.info("红1："+red1);
+        log.info("红2："+red2);
+        log.info("红3："+red3);
+        log.info("红4："+red4);
+        log.info("红5："+red5);
+        log.info("红6："+red6);
+        log.info("蓝："+blue);
 
         Integer [] redres = {red1,red2,red3,red4,red5,red6};
         Arrays.sort(redres);
         // 判断是否与往期开奖记录重复？
         boolean isRepeat = isRepeat(redres);
         if(isRepeat){
-            System.out.println("警告：出现与历史数据相同的号码！");
+            log.info("警告：出现与历史数据相同的号码！");
             String temp = "";
             for(int i:redres){
                 temp=(i< 10) ? reds+"0"+i+"," : temp+i+"," ;
             }
-            System.out.println("重复数据："+temp.substring(0, temp.length() - 1));
+            log.info("重复数据："+temp.substring(0, temp.length() - 1));
             randomDoubleBall();
         }
-        Map<String,List<Integer>> map = new HashMap<>();
+        Map<String,Object> map = new HashMap<>();
         map.put("red",Arrays.asList(redres));
-        map.put("blue",Arrays.asList(blue));
+        map.put("blue",blue);
         return map;
     }
 

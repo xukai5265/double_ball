@@ -21,12 +21,13 @@ public class AnalysisViewService {
     @Autowired
     private DoubleBallRepository doubleBallRepository;
 
+    public DoubleBall getCurrentNums(){
+        return doubleBallRepository.findAll().get(0);
+    }
 
     public List<DoubleBall> getBlueTrend(String code){
         return doubleBallRepository.findByCode(code);
     }
-
-
     /**
      * 获取双色球所有数据
      * @return

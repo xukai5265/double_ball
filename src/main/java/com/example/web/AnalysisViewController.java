@@ -32,6 +32,20 @@ public class AnalysisViewController {
     @Autowired
     private RedBlueCountService redBlueCountService;
 
+    @RequestMapping(value = "/current/nums")
+    @ResponseBody
+    public String CurrentWinNumbers(HttpServletRequest request){
+        String callback = request.getParameter("callback");
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        DoubleBall db = analysisViewService.getCurrentNums();
+        Map<String,Object> map = new HashMap<>();
+        map.put("red",Arrays.asList(db.getRed().split(",")));
+        map.put("blue",db.getBlue());
+        map.put("code",db.getCode());
+        String json = gson.toJson(map);
+        return callback + "(" + json + ")";
+    }
+
 
     /**
      * 获取蓝球中 - 红球的统计情况
@@ -85,7 +99,6 @@ public class AnalysisViewController {
                 value.add(1);
             }else if(blue.equals("02")){
                 value.add(2);
-            }else if(blue.equals("03")){
                 value.add(3);
             }else if(blue.equals("04")){
                 value.add(4);
@@ -110,7 +123,6 @@ public class AnalysisViewController {
             String json = gson.toJson(blueInfo);
             return callback + "(" + json + ")";
         }
-
     }
 
     /**

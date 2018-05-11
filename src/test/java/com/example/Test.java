@@ -9,6 +9,5 @@ public class Test {
 
         System.out.println("B...");
 
-        System.out.println("A...");
     }
 }
